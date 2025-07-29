@@ -186,7 +186,16 @@ module ABTOps (Op : Set) (sig : Op → List Sig)  where
 
   _[_] : ABT → ABT → ABT
   N [ M ] =  ⟪ subst-zero M ⟫ N
-  
+
+  subst-zero-↑1-id : ∀ M N
+    → ⟪ subst-zero M ⟫ (⟪ ↑ 1 ⟫ N) ≡ N
+  subst-zero-↑1-id M N =
+    begin
+    ⟪ subst-zero M ⟫ (⟪ ↑ 1 ⟫ N) ≡⟨ sub-sub {N} {↑ 1} {subst-zero M} ⟩
+    ⟪ ↑ 1 ⨟ (M • id) ⟫ N         ≡⟨ cong (λ □ → ⟪ □ ⟫ N) (sub-tail M _) ⟩
+    ⟪ id ⟫ N                      ≡⟨ sub-id ⟩
+    N ∎
+
   subst-zero-exts-cons : ∀{σ : Subst}{M : ABT} → ext σ ⨟ subst-zero M ≡ M • σ
   subst-zero-exts-cons {σ}{M} = begin
      ext σ ⨟ subst-zero M  ≡⟨ cong(λ □ → □  ⨟ subst-zero M)(exts-cons-shift σ) ⟩
