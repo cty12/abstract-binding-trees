@@ -24,6 +24,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no; contradiction)
 open import ScopedTuple
 open import Sig
 open import Var
+open import Function using (case_of_)
 open import Structures using (extensionality)
 
 open import Agda.Builtin.Equality
@@ -161,36 +162,61 @@ module Private where
   ... | yes refl = refl
   ... | no neq = refl
   rename-ren {ρ} {𝑘} {op ⦅ args ⦆} = cong ((λ X → op ⦅ X ⦆)) rename-ren-args
-  rename-ren-arg {ρ} {𝑘} {.■} {ast M} = cong ast rename-ren
+  rename-ren-arg {ρ} {𝑘} {.■} {ast M} = cong ast (rename-ren {ρ} {𝑘} {M})
   rename-ren-arg {ρ} {𝑘} {.(ν _)} {bind 𝑗 arg} with kind-eq? 𝑘 𝑗
   ... | yes refl = cong (bind 𝑘) (rename-ren-arg {_} {𝑘} {_} {arg})
   ... | no neq = cong (bind 𝑗) (rename-ren-arg {ρ} {𝑘} {_} {arg})
   rename-ren-args {ρ} {𝑘} {.[]} {nil} = refl
   rename-ren-args {ρ} {𝑘} {.(_ ∷ _)} {cons arg args} =
-      cong₂ cons rename-ren-arg rename-ren-args
+      cong₂ cons (rename-ren-arg {ρ} {𝑘} {_} {arg}) rename-ren-args
   {-# REWRITE rename-ren #-}
 
---   ext-ren-sub : ∀ {ρ}{τ} → exts (ren ρ) ⨟ exts τ ≡ exts (ren ρ ⨟ τ)
---   ext-ren-sub {ρ}{τ} = extensionality (aux{ρ}{τ})
---       where
---       aux : ∀{ρ}{τ} → ∀ x → (exts (ren ρ) ⨟ exts τ) x ≡ exts (ren ρ ⨟ τ) x
---       aux {ρ} {τ} zero = refl
---       aux {ρ} {τ} (suc x) = refl
---   {-# REWRITE ext-ren-sub #-}
 
---   ren-sub : ∀ {τ ρ M} → sub τ (sub (ren ρ) M) ≡ sub (ren ρ ⨟ τ) M
---   ren-sub-arg : ∀ {τ ρ b}{arg : Arg b}
---      → sub-arg τ (sub-arg (ren ρ) arg) ≡ sub-arg (ren ρ ⨟ τ) arg
---   ren-sub-args : ∀ {τ ρ bs}{args : Args bs}
---      → sub-args τ (sub-args (ren ρ) args) ≡ sub-args (ren ρ ⨟ τ) args
---   ren-sub {τ} {ρ} {` x} = refl
---   ren-sub {τ} {ρ} {op ⦅ args ⦆} = cong ((λ X → op ⦅ X ⦆)) ren-sub-args
---   ren-sub-arg {τ} {ρ} {.■} {ast M} = cong ast (ren-sub{τ}{ρ}{M})
---   ren-sub-arg {τ} {ρ} {.(ν _)} {bind arg} = cong bind (ren-sub-arg{exts τ}{extr ρ})
---   ren-sub-args {τ} {ρ} {.[]} {nil} = refl
---   ren-sub-args {τ} {ρ} {.(_ ∷ _)} {cons arg args} =
---      cong₂ cons ren-sub-arg ren-sub-args
---   {-# REWRITE ren-sub #-}
+  ext-ren-sub : ∀ {ρ}{τ}{𝑘} → exts (ren ρ 𝑘) 𝑘 ⨟ exts τ 𝑘 of 𝑘 ≡ exts (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘
+  ext-ren-sub {ρ}{τ}{𝑘} = {!!}
+    -- extensionality (aux{ρ}{τ})
+    --   where
+    --   aux : ∀{ρ}{τ} → ∀ x → (exts (ren ρ) ⨟ exts τ) x ≡ exts (ren ρ ⨟ τ) x
+    --   aux {ρ} {τ} zero = refl
+    --   aux {ρ} {τ} (suc x) = refl
+  {-# REWRITE ext-ren-sub #-}
+
+  private
+    ext-ren-η : ∀ {ρ 𝑘} → ((` 0 of 𝑘) • (λ x → ` suc (ρ x) of 𝑘)) ≡ ren (extr ρ) 𝑘
+    ext-ren-η {ρ}{𝑘} = extensionality ♠
+      where
+      ♠ : ∀ x → ((` 0 of 𝑘) • (λ y → ` suc (ρ y) of 𝑘)) x ≡ ren (extr ρ) 𝑘 x
+      ♠ zero = refl
+      ♠ (suc x) = refl
+
+  ren-sub : ∀ {τ ρ 𝑘 M} → sub τ 𝑘 (sub (ren ρ 𝑘) 𝑘 M) ≡ sub (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘 M
+  ren-sub-arg : ∀ {τ ρ 𝑘 b}{arg : Arg b}
+     → sub-arg τ 𝑘 (sub-arg (ren ρ 𝑘) 𝑘 arg) ≡ sub-arg (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘 arg
+  ren-sub-args : ∀ {τ ρ 𝑘 bs}{args : Args bs}
+     → sub-args τ 𝑘 (sub-args (ren ρ 𝑘) 𝑘 args) ≡ sub-args (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘 args
+
+  ren-sub {τ} {ρ} {𝑘} {` x of 𝑗} with kind-eq? 𝑘 𝑗
+  ... | yes refl = refl
+  ... | no k≠j with kind-eq? 𝑘 𝑗
+  ... | yes k=j = contradiction k=j k≠j
+  ... | no _ = refl
+  ren-sub {τ} {ρ} {𝑘} {op ⦅ args ⦆} = cong ((λ X → op ⦅ X ⦆)) ren-sub-args
+  ren-sub-arg {τ} {ρ} {𝑘} {.■} {ast M} = cong ast (ren-sub{τ}{ρ}{𝑘}{M})
+  ren-sub-arg {τ} {ρ} {𝑘} {.(ν _)} {bind 𝑗 arg} with kind-eq? 𝑘 𝑗
+  ... | yes refl with kind-eq? 𝑘 𝑘
+  ...   | yes refl = cong (bind 𝑘) ♣
+    where
+    ♣ : sub-arg (exts τ 𝑗) 𝑗 (sub-arg ((` 0 of 𝑗) • (λ x → ` suc (ρ x) of 𝑗)) 𝑗 arg) ≡
+                sub-arg (exts (ren ρ 𝑗 ⨟ τ of 𝑗) 𝑗) 𝑗 arg
+    ♣ rewrite ext-ren-η {ρ} {𝑗} = ren-sub-arg {exts τ 𝑘} {extr ρ} {𝑘} {arg = arg}
+  ...   | no k≠k = contradiction refl k≠k
+  ren-sub-arg {τ} {ρ} {𝑘} {.(ν _)} {bind 𝑗 arg} | no k≠j with kind-eq? 𝑘 𝑗
+  ... | yes k=j = contradiction k=j k≠j
+  ... | no k≠j  = cong (bind 𝑗) (ren-sub-arg {τ} {ρ} {𝑘} {arg = arg})
+  ren-sub-args {τ} {ρ} {𝑘} {.[]} {nil} = refl
+  ren-sub-args {τ} {ρ} {𝑘} {.(_ ∷ _)} {cons arg args} =
+     cong₂ cons (ren-sub-arg {arg = arg}) ren-sub-args
+  {-# REWRITE ren-sub #-}
 
 --   sub-ren : ∀{ρ σ M} → sub (ren ρ) (sub σ M) ≡ sub (σ ⨟ ren ρ) M
 --   sub-ren-arg : ∀{ρ σ b}{arg : Arg b} → sub-arg (ren ρ) (sub-arg σ arg) ≡ sub-arg (σ ⨟ ren ρ) arg
