@@ -35,7 +35,8 @@ module rewriting.AbstractBindingTreeWithKind {ℓ}
   (Op : Set ℓ)
   (sig : Op → List Sig)
   (VarKind : Set)
-  (kind-eq? : ∀ (𝑘 𝑗 : VarKind) → Dec (𝑘 ≡ 𝑗)) where
+  (kind-eq? : ∀ (𝑘 𝑗 : VarKind) → Dec (𝑘 ≡ 𝑗))
+  where
 
 data Args : List Sig → Set ℓ
 
@@ -131,6 +132,12 @@ module Private where
     _⨟_of_ : Subst → Subst → VarKind → Subst
     (σ ⨟ τ of 𝑘) x = sub τ 𝑘 (σ x)
 
+
+  -- This won't work because kind-eq? is parameterized.  - Tianyu
+  -- +rw : ∀ {𝑘} → kind-eq? 𝑘 𝑘 ≡ yes refl
+  -- +rw = {!!}
+  -- {-# REWRITE +rw #-}
+
   abstract
     seq-def : ∀ σ τ 𝑘 x → (σ ⨟ τ of 𝑘) x ≡ sub τ 𝑘 (σ x)
     seq-def σ τ 𝑘 x = refl
@@ -215,7 +222,6 @@ module Private where
      → sub-arg τ 𝑘 (sub-arg (ren ρ 𝑘) 𝑘 arg) ≡ sub-arg (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘 arg
   ren-sub-args : ∀ {τ ρ 𝑘 bs}{args : Args bs}
      → sub-args τ 𝑘 (sub-args (ren ρ 𝑘) 𝑘 args) ≡ sub-args (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘 args
-
   ren-sub {τ} {ρ} {𝑘} {` x of 𝑗} with kind-eq? 𝑘 𝑗
   ... | yes refl = refl
   ... | no k≠j with kind-eq? 𝑘 𝑗
@@ -225,11 +231,7 @@ module Private where
   ren-sub-arg {τ} {ρ} {𝑘} {.■} {ast M} = cong ast (ren-sub{τ}{ρ}{𝑘}{M})
   ren-sub-arg {τ} {ρ} {𝑘} {.(ν _)} {bind 𝑗 arg} with kind-eq? 𝑘 𝑗
   ... | yes refl with kind-eq? 𝑘 𝑘
-  ...   | yes refl = cong (bind 𝑘) ♣
-    where
-    ♣ : sub-arg (exts τ 𝑗) 𝑗 (sub-arg ((` 0 of 𝑗) • (λ x → ` suc (ρ x) of 𝑗)) 𝑗 arg) ≡
-                sub-arg (exts (ren ρ 𝑗 ⨟ τ of 𝑗) 𝑗) 𝑗 arg
-    ♣ rewrite ext-ren-η {ρ} {𝑗} = ren-sub-arg {exts τ 𝑘} {extr ρ} {𝑘} {arg = arg}
+  ...   | yes refl rewrite ext-ren-η {ρ} {𝑗} = cong (bind 𝑘) (ren-sub-arg {exts τ 𝑘} {extr ρ} {𝑘} {arg = arg})
   ...   | no k≠k = contradiction refl k≠k
   ren-sub-arg {τ} {ρ} {𝑘} {.(ν _)} {bind 𝑗 arg} | no k≠j with kind-eq? 𝑘 𝑗
   ... | yes k=j = contradiction k=j k≠j
@@ -239,16 +241,16 @@ module Private where
      cong₂ cons (ren-sub-arg {arg = arg}) ren-sub-args
   {-# REWRITE ren-sub #-}
 
---   sub-ren : ∀{ρ σ M} → sub (ren ρ) (sub σ M) ≡ sub (σ ⨟ ren ρ) M
---   sub-ren-arg : ∀{ρ σ b}{arg : Arg b} → sub-arg (ren ρ) (sub-arg σ arg) ≡ sub-arg (σ ⨟ ren ρ) arg
---   sub-ren-args : ∀{ρ σ bs}{args : Args bs} → sub-args (ren ρ) (sub-args σ args) ≡ sub-args (σ ⨟ ren ρ) args
---   sub-ren {ρ} {σ} {` x} = refl
---   sub-ren {ρ} {σ} {op ⦅ args ⦆} = cong (λ X → op ⦅ X ⦆) sub-ren-args
---   sub-ren-arg {ρ} {σ} {.■} {ast M} = cong ast (sub-ren{ρ}{σ}{M})
---   sub-ren-arg {ρ} {σ} {.(ν _)} {bind arg} = cong bind sub-ren-arg
---   sub-ren-args {ρ} {σ} {.[]} {nil} = refl
---   sub-ren-args {ρ} {σ} {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-ren-arg sub-ren-args
---   {-# REWRITE sub-ren #-}
+  -- sub-ren : ∀{ρ σ 𝑘 M} → sub (ren ρ) (sub σ M) ≡ sub (σ ⨟ ren ρ) M
+  -- sub-ren-arg : ∀{ρ σ b}{arg : Arg b} → sub-arg (ren ρ) (sub-arg σ arg) ≡ sub-arg (σ ⨟ ren ρ) arg
+  -- sub-ren-args : ∀{ρ σ bs}{args : Args bs} → sub-args (ren ρ) (sub-args σ args) ≡ sub-args (σ ⨟ ren ρ) args
+  -- sub-ren {ρ} {σ} {` x} = refl
+  -- sub-ren {ρ} {σ} {op ⦅ args ⦆} = cong (λ X → op ⦅ X ⦆) sub-ren-args
+  -- sub-ren-arg {ρ} {σ} {.■} {ast M} = cong ast (sub-ren{ρ}{σ}{M})
+  -- sub-ren-arg {ρ} {σ} {.(ν _)} {bind arg} = cong bind sub-ren-arg
+  -- sub-ren-args {ρ} {σ} {.[]} {nil} = refl
+  -- sub-ren-args {ρ} {σ} {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-ren-arg sub-ren-args
+  -- {-# REWRITE sub-ren #-}
 
 --   sub-sub : ∀{σ τ M} → sub τ (sub σ M) ≡ sub (σ ⨟ τ) M
 --   sub-sub-arg : ∀{σ τ b}{arg : Arg b} → sub-arg τ (sub-arg σ arg) ≡ sub-arg (σ ⨟ τ) arg
