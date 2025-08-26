@@ -188,6 +188,27 @@ module Private where
   ... | yes refl = refl
   ... | no k≠k = contradiction refl k≠k
 
+  -- ext-sub : ∀ {σ 𝑘 M} → (sub (exts σ 𝑘) 𝑘 (rename suc 𝑘 M)) ≡ rename suc 𝑘 (sub σ 𝑘 M)
+  -- ext-sub-arg : ∀ {σ 𝑘 b}{arg : Arg b} → (sub-arg (exts σ 𝑘) 𝑘 (rename-arg suc 𝑘 arg)) ≡ rename-arg suc 𝑘 (sub-arg σ 𝑘 arg)
+  -- ext-sub-args : ∀ {σ 𝑘 bs}{args : Args bs} → (sub-args (exts σ 𝑘) 𝑘 (rename-args suc 𝑘 args)) ≡ rename-args suc 𝑘 (sub-args σ 𝑘 args)
+  -- ext-sub {σ} {𝑘} {` x of 𝑗} with kind-eq? 𝑘 𝑗
+  -- ... | yes refl = ext-sub-suc {σ} x
+  -- ... | no k≠j with kind-eq? 𝑘 𝑗
+  -- ... |   no _ = refl
+  -- ... |   yes k=j = contradiction k=j k≠j
+  -- ext-sub {σ} {𝑘} {op ⦅ args ⦆} = cong ((λ X → op ⦅ X ⦆)) ext-sub-args
+  -- ext-sub-arg {σ} {𝑘} {.■} {ast M} =  cong ast (ext-sub {σ}{𝑘}{M})
+  -- ext-sub-arg {σ} {𝑘} {.(ν _)} {bind 𝑗 arg} with kind-eq? 𝑘 𝑗
+  -- ... | no k≠j with kind-eq? 𝑘 𝑗
+  -- ...   | yes k=j = contradiction k=j k≠j
+  -- ...   | no _ = cong (bind 𝑗) (ext-sub-arg {σ} {𝑘} {arg = arg})
+  -- ext-sub-arg {σ} {𝑘} {.(ν _)} {bind 𝑗 arg} | yes refl with kind-eq? 𝑘 𝑘
+  -- ... | yes refl = {!!}
+  -- ... | no k≠k = contradiction refl k≠k
+  -- ext-sub-args {σ} {𝑘} {.[]} {nil} = refl
+  -- ext-sub-args {σ} {𝑘} {.(_ ∷ _)} {cons arg args} =
+  --    cong₂ cons (ext-sub-arg {arg = arg}) ext-sub-args
+
   -- I think this lemma is important because it rids the left side of 𝑘.  - Tianyu
   sub-ren-var : ∀ {σ ρ 𝑘} x → sub σ 𝑘 ((ren ρ 𝑘) x) ≡ σ (ρ x)
   sub-ren-var {σ} {ρ} {𝑘} x with kind-eq? 𝑘 𝑘
@@ -201,10 +222,8 @@ module Private where
     ♠ zero = ext-sub-zero {τ}
     ♠ (suc x) =
       begin
-      (exts (ren ρ 𝑘) 𝑘 ⨟ exts τ 𝑘 of 𝑘) (suc x) ≡⟨ refl ⟩
-      sub (exts τ 𝑘) 𝑘 (` suc (ρ x) of 𝑘) ≡⟨ ext-sub-suc {τ} (ρ x) ⟩
-      rename suc 𝑘 (τ (ρ x)) ≡⟨ cong (λ □ → rename suc 𝑘 □) (sym (sub-ren-var {τ} {ρ} x)) ⟩
-      rename suc 𝑘 (sub τ 𝑘 ((ren ρ 𝑘) x)) ≡⟨ refl ⟩
+      (exts (ren ρ 𝑘) 𝑘 ⨟ exts τ 𝑘 of 𝑘) (suc x) ≡⟨ ext-sub-suc {τ} (ρ x) ⟩
+      rename suc 𝑘 (τ (ρ x))                     ≡⟨ cong (λ □ → rename suc 𝑘 □) (sym (sub-ren-var {τ} {ρ} x)) ⟩
       (exts (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘) (suc x)
       ∎
   {-# REWRITE ext-ren-sub #-}
@@ -241,18 +260,51 @@ module Private where
      cong₂ cons (ren-sub-arg {arg = arg}) ren-sub-args
   {-# REWRITE ren-sub #-}
 
-  -- sub-ren : ∀{ρ σ 𝑘 M} → sub (ren ρ) (sub σ M) ≡ sub (σ ⨟ ren ρ) M
-  -- sub-ren-arg : ∀{ρ σ b}{arg : Arg b} → sub-arg (ren ρ) (sub-arg σ arg) ≡ sub-arg (σ ⨟ ren ρ) arg
-  -- sub-ren-args : ∀{ρ σ bs}{args : Args bs} → sub-args (ren ρ) (sub-args σ args) ≡ sub-args (σ ⨟ ren ρ) args
-  -- sub-ren {ρ} {σ} {` x} = refl
-  -- sub-ren {ρ} {σ} {op ⦅ args ⦆} = cong (λ X → op ⦅ X ⦆) sub-ren-args
-  -- sub-ren-arg {ρ} {σ} {.■} {ast M} = cong ast (sub-ren{ρ}{σ}{M})
-  -- sub-ren-arg {ρ} {σ} {.(ν _)} {bind arg} = cong bind sub-ren-arg
-  -- sub-ren-args {ρ} {σ} {.[]} {nil} = refl
-  -- sub-ren-args {ρ} {σ} {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-ren-arg sub-ren-args
-  -- {-# REWRITE sub-ren #-}
+  postulate
+    ext-sub-ren : ∀ {ρ} {σ} {𝑘} → exts σ 𝑘 ⨟ exts (ren ρ 𝑘) 𝑘 of 𝑘 ≡ exts (σ ⨟ ren ρ 𝑘 of 𝑘) 𝑘
+  -- ext-sub-ren {ρ}{σ}{𝑘} = extensionality ♠
+  --   where
+  --   ♠ : ∀ x → (exts σ 𝑘 ⨟ exts (ren ρ 𝑘) 𝑘 of 𝑘) x ≡ (exts (σ ⨟ ren ρ 𝑘 of 𝑘) 𝑘) x
+  --   ♠ zero = ext-sub-zero {ren ρ 𝑘}
+  --   ♠ (suc x) =
+  --     begin
+  --     (exts σ 𝑘 ⨟ exts (ren ρ 𝑘) 𝑘 of 𝑘) (suc x) ≡⟨ refl ⟩
+  --     (sub (exts (ren ρ 𝑘) 𝑘) 𝑘 (rename suc 𝑘 (σ x))) ≡⟨ {!!} ⟩
+  --     rename suc 𝑘 (sub (ren ρ 𝑘) 𝑘 (σ x)) ≡⟨ refl ⟩
+  --     (exts (σ ⨟ ren ρ 𝑘 of 𝑘) 𝑘) (suc x)
+  --     ∎
 
---   sub-sub : ∀{σ τ M} → sub τ (sub σ M) ≡ sub (σ ⨟ τ) M
+  sub-ren : ∀ {ρ σ 𝑘 M} → sub (ren ρ 𝑘) 𝑘 (sub σ 𝑘 M) ≡ sub (σ ⨟ ren ρ 𝑘 of 𝑘) 𝑘 M
+  sub-ren-arg : ∀ {ρ σ 𝑘 b} {arg : Arg b} → sub-arg (ren ρ 𝑘) 𝑘 (sub-arg σ 𝑘 arg) ≡ sub-arg (σ ⨟ ren ρ 𝑘 of 𝑘) 𝑘 arg
+  sub-ren-args : ∀ {ρ σ 𝑘 bs} {args : Args bs} → sub-args (ren ρ 𝑘) 𝑘 (sub-args σ 𝑘 args) ≡ sub-args (σ ⨟ ren ρ 𝑘 of 𝑘) 𝑘 args
+  sub-ren {ρ} {σ} {𝑘} {` x of 𝑗} with kind-eq? 𝑘 𝑗
+  ... | yes refl = refl
+  ... | no k≠j with kind-eq? 𝑘 𝑗
+  ... | yes k=j = contradiction k=j k≠j
+  ... | no _ = refl
+  sub-ren {ρ} {σ} {𝑘} {op ⦅ args ⦆} = cong (λ X → op ⦅ X ⦆) sub-ren-args
+  sub-ren-arg {ρ} {σ} {𝑘} {.■} {ast M} = cong ast (sub-ren{ρ}{σ}{𝑘}{M})
+  sub-ren-arg {ρ} {σ} {𝑘} {.(ν _)} {bind 𝑗 arg} with kind-eq? 𝑘 𝑗
+  ... | yes refl with kind-eq? 𝑘 𝑘
+  ...   | yes refl = cong (bind 𝑘) ♠
+    where
+    iH : sub-arg (ren (extr ρ) 𝑗) 𝑗 (sub-arg (exts σ 𝑗) 𝑗 arg) ≡
+         sub-arg (exts σ 𝑗 ⨟ exts (ren ρ 𝑗) 𝑗 of 𝑗) 𝑗 arg
+    iH = (sub-ren-arg {extr ρ} {exts σ 𝑘} {𝑘} {arg = arg})
+    ♠ :  sub-arg (ren (extr ρ) 𝑗) 𝑗 (sub-arg (exts σ 𝑗) 𝑗 arg) ≡
+         sub-arg (exts (σ ⨟ ren ρ 𝑗 of 𝑗) 𝑗) 𝑗 arg
+    ♠ = subst (λ □ → sub-arg (ren (extr ρ) 𝑗) 𝑗 (sub-arg (exts σ 𝑗) 𝑗 arg) ≡ sub-arg □ 𝑗 arg) (ext-sub-ren {ρ} {σ} {𝑗}) iH
+  ...   | no k≠k = contradiction refl k≠k
+  sub-ren-arg {τ} {ρ} {𝑘} {.(ν _)} {bind 𝑗 arg} | no k≠j with kind-eq? 𝑘 𝑗
+  ... | yes k=j = contradiction k=j k≠j
+  ... | no k≠j  = cong (bind 𝑗) (sub-ren-arg {τ} {ρ} {𝑘} {arg = arg})
+  sub-ren-args {ρ} {σ} {𝑘} {.[]} {nil} = refl
+  sub-ren-args {ρ} {σ} {𝑘} {.(_ ∷ _)} {cons arg args} =
+    cong₂ cons (sub-ren-arg {arg = arg}) sub-ren-args
+  {-# REWRITE sub-ren #-}
+
+  postulate
+    sub-sub : ∀{σ τ 𝑘 M} → sub τ 𝑘 (sub σ 𝑘 M) ≡ sub (σ ⨟ τ of 𝑘) 𝑘 M
 --   sub-sub-arg : ∀{σ τ b}{arg : Arg b} → sub-arg τ (sub-arg σ arg) ≡ sub-arg (σ ⨟ τ) arg
 --   sub-sub-args : ∀{σ τ bs}{args : Args bs} → sub-args τ (sub-args σ args) ≡ sub-args (σ ⨟ τ) args
 --   sub-sub {σ} {τ} {` x} = refl
@@ -261,87 +313,88 @@ module Private where
 --   sub-sub-arg {σ} {τ} {.(ν _)} {bind arg} = cong bind sub-sub-arg
 --   sub-sub-args {σ} {τ} {.[]} {nil} = refl
 --   sub-sub-args {σ} {τ} {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-sub-arg sub-sub-args
---   {-# REWRITE sub-sub #-}
+  {-# REWRITE sub-sub #-}
 
---   shift-seq : ∀{σ} → ⟰ σ ≡ σ ⨟ ren suc
---   shift-seq {σ} = refl
+  shift-seq : ∀{σ 𝑘} → ⟰ σ 𝑘 ≡ (σ ⨟ ren suc 𝑘 of 𝑘)
+  shift-seq {σ} = refl
 
---   idᵣ : Rename
---   idᵣ x = x
+  idᵣ : Rename
+  idᵣ x = x
 
---   extr-id : (0 •ᵣ ⟰ᵣ idᵣ) ≡ idᵣ {- extr idᵣ ≡ idᵣ -}
---   extr-id = extensionality aux
---     where
---     aux : ∀ x → extr idᵣ x ≡ idᵣ x
---     aux zero = refl
---     aux (suc x) = refl
---   {-# REWRITE extr-id #-}
+  extr-id : (0 •ᵣ ⟰ᵣ idᵣ) ≡ idᵣ {- extr idᵣ ≡ idᵣ -}
+  extr-id = extensionality aux
+    where
+    aux : ∀ x → extr idᵣ x ≡ idᵣ x
+    aux zero = refl
+    aux (suc x) = refl
+  {-# REWRITE extr-id #-}
 
---   id : Subst
---   id x = ` x
+  id : VarKind → Subst
+  id 𝑘 x = ` x of 𝑘
 
---   ext-id : exts id ≡ id
---   ext-id = refl
+  ext-id : ∀ {𝑘} → exts (id 𝑘) 𝑘 ≡ id 𝑘
+  ext-id = refl
 
---   sub-id : ∀ {M} → sub id M ≡ M
---   sub-arg-id : ∀ {b}{arg : Arg b} → sub-arg id arg ≡ arg
---   sub-args-id : ∀ {bs}{args : Args bs} → sub-args id args ≡ args
---   sub-id {` x} = refl
---   sub-id {op ⦅ args ⦆} = cong (λ X → op ⦅ X ⦆) sub-args-id
---   sub-arg-id {.■} {ast M} = cong ast sub-id
---   sub-arg-id {.(ν _)} {bind arg} = cong bind sub-arg-id
---   sub-args-id {.[]} {nil} = refl
---   sub-args-id {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-arg-id sub-args-id
---   {-# REWRITE sub-id #-}
+  postulate
+    sub-id : ∀ {M 𝑘} → sub (id 𝑘) 𝑘 M ≡ M
+  -- sub-arg-id : ∀ {b}{arg : Arg b} → sub-arg id arg ≡ arg
+  -- sub-args-id : ∀ {bs}{args : Args bs} → sub-args id args ≡ args
+  -- sub-id {` x} = refl
+  -- sub-id {op ⦅ args ⦆} = cong (λ X → op ⦅ X ⦆) sub-args-id
+  -- sub-arg-id {.■} {ast M} = cong ast sub-id
+  -- sub-arg-id {.(ν _)} {bind arg} = cong bind sub-arg-id
+  -- sub-args-id {.[]} {nil} = refl
+  -- sub-args-id {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-arg-id sub-args-id
+  {-# REWRITE sub-id #-}
 
--- {----------------------------------------------------------------------------
---  Public
--- ----------------------------------------------------------------------------}
+{----------------------------------------------------------------------------
+ Public
+----------------------------------------------------------------------------}
 
--- abstract {- experimenting with making ren abstract -Jeremy -}
---   ren : Rename → Subst
---   ren = Private.ren
+abstract {- experimenting with making ren abstract -Jeremy -}
+  ren : Rename → VarKind → Subst
+  ren ρ 𝑘 = Private.ren ρ 𝑘
 
---   ren-def : ∀ ρ x → ren ρ x ≡ ` ρ x
---   ren-def ρ x = refl
+  ren-def : ∀ ρ 𝑘 x → ren ρ 𝑘 x ≡ ` ρ x of 𝑘
+  ren-def ρ 𝑘 x = refl
 
--- ↑ : Subst
--- ↑ = ren suc
+↑ : VarKind → Subst
+↑ 𝑘 = ren suc 𝑘
 
--- up-def : ↑ ≡ ren suc
--- up-def = refl
+up-def : ↑ ≡ ren suc
+up-def = refl
 
--- abstract
---   infixr 5 _⨟_
---   _⨟_ : Subst → Subst → Subst
---   σ ⨟ τ = Private._⨟_ σ τ
+abstract
+  infixr 5 _⨟_of_
+  _⨟_of_ : Subst → Subst → VarKind → Subst
+  σ ⨟ τ of 𝑘 = Private._⨟_of_ σ τ 𝑘
 
---   id : Subst
---   id = Private.id
-    
--- ext : Subst → Subst
--- ext σ = ` 0 • (σ ⨟ ↑)
+  id : VarKind → Subst
+  id 𝑘 = Private.id 𝑘
 
--- abstract
---   -- Phil: you're using semicolon, so this should be postfix
---   ⟪_⟫ : Subst → ABT → ABT
---   ⟪ σ ⟫ M = Private.sub σ M
+ext : Subst → VarKind → Subst
+ext σ 𝑘 = (` 0 of 𝑘) • (σ ⨟ ↑ 𝑘 of 𝑘)
 
---   -- Phil: try switching + to *
---   ⟪_⟫₊ : Subst → {bs : List Sig} → Args bs → Args bs
---   ⟪ σ ⟫₊ args = Private.sub-args σ args
+abstract
+  -- Phil: you're using semicolon, so this should be postfix
+  ⟪_⟫ : Subst → VarKind → ABT → ABT
+  ⟪ σ ⟫ 𝑘 M = Private.sub σ 𝑘 M
 
---   ⟪_⟫ₐ : Subst → {b : Sig} → Arg b → Arg b
---   ⟪ σ ⟫ₐ arg = Private.sub-arg σ arg
+  -- Phil: try switching + to *
+  ⟪_⟫₊ : Subst → VarKind → {bs : List Sig} → Args bs → Args bs
+  ⟪ σ ⟫₊ 𝑘 args = Private.sub-args σ 𝑘 args
 
---   id-var : ∀{x} → id x ≡ ` x
---   id-var {x} = refl
---   {-# REWRITE id-var #-}
-  
---   sub-var : ∀ σ x → ⟪ σ ⟫ (` x) ≡ σ x
---   sub-var σ x = refl
---   {- REWRITE sub-var -}
-  
+  ⟪_⟫ₐ : Subst → VarKind → {b : Sig} → Arg b → Arg b
+  ⟪ σ ⟫ₐ 𝑘 arg = Private.sub-arg σ 𝑘 arg
+
+  id-var : ∀{x 𝑘} → (id 𝑘 x) ≡ (` x of 𝑘)
+  id-var {x} {𝑘} = refl
+  {-# REWRITE id-var #-}
+
+  -- sub-var : ∀ σ 𝑘 x → ⟪ σ ⟫ 𝑘 (` x of 𝑘) ≡ σ x
+  -- sub-var σ 𝑘 x = refl
+  -- {- REWRITE sub-var -}
+
 --   sub-op : ∀{σ : Subst}{op : Op}{args : Args (sig op)}
 --      → ⟪ σ ⟫ (op ⦅ args ⦆) ≡ op ⦅ ⟪ σ ⟫₊ args ⦆
 --   sub-op {σ}{op}{args} = refl
@@ -350,7 +403,7 @@ module Private where
 --   sub-arg-ast : ∀{σ M} → ⟪ σ ⟫ₐ (ast M) ≡ ast (⟪ σ ⟫ M)
 --   sub-arg-ast {σ}{M} = refl
 --   {-# REWRITE sub-arg-ast #-}
-  
+
 --   sub-arg-bind : ∀{σ b}{arg : Arg b}
 --      → ⟪ σ ⟫ₐ (bind arg) ≡ bind (⟪ ext σ ⟫ₐ arg)
 --   sub-arg-bind {σ}{b}{arg} = refl
@@ -379,7 +432,7 @@ module Private where
 
 --   sub-id : ∀ M → ⟪ id ⟫ M ≡ M
 --   sub-id M = Private.sub-id
---   {-# REWRITE sub-id #-}  
+--   {-# REWRITE sub-id #-}
 
 --   sub-eta : ∀ σ → (⟪ σ ⟫ (` 0)) • (↑ ⨟ σ) ≡ σ
 --   sub-eta σ = extensionality aux
@@ -387,11 +440,11 @@ module Private where
 --     aux : ∀ {σ} x → ((⟪ σ ⟫ (` 0)) • (↑ ⨟ σ)) x ≡ σ x
 --     aux {σ} zero = refl
 --     aux {σ} (suc x) = refl
---   {-# REWRITE sub-eta #-}  
+--   {-# REWRITE sub-eta #-}
 
---   sub-id-right : ∀ (σ : Subst) → σ ⨟ id ≡ σ 
+--   sub-id-right : ∀ (σ : Subst) → σ ⨟ id ≡ σ
 --   sub-id-right σ = refl
---   {-# REWRITE sub-id-right #-}  
+--   {-# REWRITE sub-id-right #-}
 
 --   sub-id-left : (σ : Subst) → id ⨟ σ ≡ σ
 --   sub-id-left σ = refl
@@ -400,18 +453,18 @@ module Private where
 --   sub-assoc : ∀ σ τ θ → (σ ⨟ τ) ⨟ θ ≡ σ ⨟ τ ⨟ θ
 --   sub-assoc σ τ θ = refl
 --   {-# REWRITE sub-assoc #-}
-  
+
 --   cons-seq : ∀ σ τ M → (M • σ) ⨟ τ ≡ ⟪ τ ⟫ M • (σ ⨟ τ)
 --   cons-seq σ τ M = refl
---   {-# REWRITE cons-seq #-}  
+--   {-# REWRITE cons-seq #-}
 
 --   compose-sub : ∀ σ τ M → ⟪ τ ⟫ (⟪ σ ⟫ M) ≡ ⟪ σ ⨟ τ ⟫ M
 --   compose-sub σ τ M = refl
---   {-# REWRITE compose-sub #-}  
+--   {-# REWRITE compose-sub #-}
 
 --   cons-zero-up : ` 0 • ↑ ≡ id
 --   cons-zero-up = refl
---   {-# REWRITE cons-zero-up #-}  
+--   {-# REWRITE cons-zero-up #-}
 
 --   seq-def : ∀ σ τ x → (σ ⨟ τ) x ≡ ⟪ τ ⟫ (σ x)
 --   seq-def σ τ x = refl
@@ -422,7 +475,7 @@ module Private where
 --   ext-ren-extr : ∀ ρ → (` 0) • (ren ρ ⨟ ↑) ≡ ren (extr ρ)
 --   ext-ren-extr ρ = refl
 --   -- {-# REWRITE ext-ren-extr #-}
-  
+
 --   ren-extr-def : ∀ ρ → ren (extr ρ) ≡ ` 0 • (ren ρ ⨟ ↑)
 --   ren-extr-def ρ = refl
 --   {-# REWRITE ren-extr-def #-}
@@ -435,7 +488,7 @@ module Private where
 --   ren-extr-suc ρ x = refl
 --   {- REWRITE ren-extr-suc -}
 
---   seq-up-ren-suc : ∀ σ x → (σ ⨟ ↑) x ≡ Private.sub (Private.ren suc) (σ x)  
+--   seq-up-ren-suc : ∀ σ x → (σ ⨟ ↑) x ≡ Private.sub (Private.ren suc) (σ x)
 --   seq-up-ren-suc σ x = refl
 
 --   ren-seq-up : ∀ ρ x → (ren ρ ⨟ ↑) x ≡ ` suc (ρ x)
@@ -453,101 +506,3 @@ module Private where
 
 -- exts-sub-cons : ∀ {σ N V} → (⟪ ext σ ⟫ N) [ V ] ≡ ⟪ V • σ ⟫ N
 -- exts-sub-cons {σ}{N}{V} = refl
-
--- {----------------------------------------------------------------------------
---  Free variables
--- ----------------------------------------------------------------------------}
-
--- FV? : ABT → Var → Bool
--- FV-arg? : ∀{b} → Arg b → Var → Bool
--- FV-args? : ∀{bs} → Args bs → Var → Bool
--- FV? (` x) y
---     with x ≟ y
--- ... | yes xy = true
--- ... | no xy = false
--- FV? (op ⦅ args ⦆) y = FV-args? args y
--- FV-arg? (ast M) y = FV? M y
--- FV-arg? (bind arg) y = FV-arg? arg (suc y)
--- FV-args? nil y = false
--- FV-args? (cons arg args) y = FV-arg? arg y ∨ FV-args? args y
-
--- {- Predicate Version -}
-
--- FV : ABT → Var → Set
--- FV-arg : ∀{b} → Arg b → Var → Set
--- FV-args : ∀{bs} → Args bs → Var → Set
--- FV (` x) y = x ≡ y
--- FV (op ⦅ args ⦆) y = FV-args args y
--- FV-arg (ast M) y = FV M y
--- FV-arg (bind arg) y = FV-arg arg (suc y)
--- FV-args nil y = ⊥
--- FV-args (cons arg args) y = FV-arg arg y ⊎ FV-args args y
-
--- FV-rename-fwd : ∀ (ρ : Rename) M y → FV M y
---    → FV (rename ρ M) (ρ y)
--- FV-rename-fwd ρ (` x) y refl = refl
--- FV-rename-fwd ρ (op ⦅ args ⦆) y fvMy = fvr-args ρ (sig op) args y fvMy
---   where
---   fvr-arg : ∀ (ρ : Rename) b (arg : Arg b) y
---       → FV-arg arg y → FV-arg (rename-arg ρ arg) (ρ y)
---   fvr-args : ∀ (ρ : Rename) bs (args : Args bs) y
---       → FV-args args y → FV-args (rename-args ρ args) (ρ y)
---   fvr-arg ρ ■ (ast M) y fvarg = FV-rename-fwd ρ M y fvarg
---   fvr-arg ρ (ν b) (bind arg) y fvarg =
---       fvr-arg (extr ρ) b arg (suc y) fvarg
---   fvr-args ρ [] nil y ()
---   fvr-args ρ (b ∷ bs) (cons arg args) y (inj₁ fvargy) =
---       inj₁ (fvr-arg ρ b arg y fvargy)
---   fvr-args ρ (b ∷ bs) (cons arg args) y (inj₂ fvargsy) =
---       inj₂ (fvr-args ρ bs args y fvargsy)
-
--- FV-rename : ∀ (ρ : Rename) M y → FV (rename ρ M) y
---    → Σ[ x ∈ Var ] ρ x ≡ y × FV M x
--- FV-rename ρ (` x) y refl = ⟨ x , ⟨ refl , refl ⟩ ⟩
--- FV-rename ρ (op ⦅ args ⦆) y fv = fvr-args ρ (sig op) args y fv
---   where
---   fvr-arg : ∀ (ρ : Rename) b (arg : Arg b) y
---      → FV-arg (rename-arg ρ arg) y → Σ[ x ∈ Var ] (ρ) x ≡ y × FV-arg arg x
---   fvr-args : ∀ (ρ : Rename) bs (args : Args bs) y
---      → FV-args (rename-args ρ args) y → Σ[ x ∈ Var ] (ρ) x ≡ y × FV-args args x
---   fvr-arg ρ b (ast M) y fv = FV-rename ρ M y fv 
---   fvr-arg ρ (ν b) (bind arg) y fv 
---       with fvr-arg (extr ρ) b arg (suc y) fv
---   ... | ⟨ 0 , eq ⟩  
---       with eq
---   ... | ()
---   fvr-arg ρ (ν b) (bind arg) y fv 
---       | ⟨ suc x , ⟨ eq , sx∈arg ⟩ ⟩ =
---         ⟨ x , ⟨ suc-injective eq , sx∈arg ⟩ ⟩
---   fvr-args ρ [] nil y ()
---   fvr-args ρ (b ∷ bs) (cons arg args) y (inj₁ fv)
---       with fvr-arg ρ b arg y fv
---   ... | ⟨ x , ⟨ ρx , x∈arg ⟩ ⟩ = 
---         ⟨ x , ⟨ ρx , (inj₁ x∈arg) ⟩ ⟩
---   fvr-args ρ (b ∷ bs) (cons arg args) y (inj₂ fv)
---       with fvr-args ρ bs args y fv
---   ... | ⟨ x , ⟨ ρx , x∈args ⟩ ⟩ = 
---         ⟨ x , ⟨ ρx , (inj₂ x∈args) ⟩ ⟩
-
--- rename-FV-⊥ : ∀ y (ρ : Rename) M → (∀ x → (ρ) x ≢ y) → FV (rename ρ M) y → ⊥
--- rename-FV-⊥ y ρ M ρx≢y fvρM 
---     with FV-rename ρ M y fvρM
--- ... | ⟨ x , ⟨ ρxy , x∈M ⟩ ⟩ = ⊥-elim (ρx≢y x ρxy)
-
--- FV-↑1-0 : ∀ M → FV (rename suc M) 0 → ⊥
--- FV-↑1-0 M = rename-FV-⊥ 0 suc M (λ { x () })
-
--- abstract
---   FV-ren : ∀ (ρ : Rename) M y → FV (⟪ ren ρ ⟫ M) y
---      → ∃[ x ] ρ x ≡ y × FV M x
---   FV-ren ρ M y y∈FVρM = FV-rename ρ M y y∈FVρM
-
---   FV-ren-fwd : ∀ (ρ : Rename) M y → FV M y
---      → FV (⟪ ren ρ ⟫ M) (ρ y)
---   FV-ren-fwd ρ M y y∈M = FV-rename-fwd ρ M y y∈M
-
---   FV-suc-0 : ∀ M → FV (⟪ ren suc ⟫ M) 0 → ⊥
---   FV-suc-0 M = rename-FV-⊥ 0 suc M (λ { x () })
-
-
-
