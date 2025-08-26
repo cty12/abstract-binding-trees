@@ -171,14 +171,35 @@ module Private where
       cong₂ cons (rename-ren-arg {ρ} {𝑘} {_} {arg}) rename-ren-args
   {-# REWRITE rename-ren #-}
 
+  ext-sub-zero : ∀ {σ 𝑘} → sub (exts σ 𝑘) 𝑘 (` 0 of 𝑘) ≡ ` 0 of 𝑘
+  ext-sub-zero {σ} {𝑘} with kind-eq? 𝑘 𝑘
+  ... | yes refl = refl
+  ... | no _ = refl
+
+  ext-sub-suc : ∀ {σ 𝑘} x → sub (exts σ 𝑘) 𝑘 (` suc x of 𝑘) ≡ rename suc 𝑘 (σ x)
+  ext-sub-suc {σ} {𝑘} x with kind-eq? 𝑘 𝑘
+  ... | yes refl = refl
+  ... | no k≠k = contradiction refl k≠k
+
+  -- I think this lemma is important because it rids the left side of 𝑘.  - Tianyu
+  sub-ren-var : ∀ {σ ρ 𝑘} x → sub σ 𝑘 ((ren ρ 𝑘) x) ≡ σ (ρ x)
+  sub-ren-var {σ} {ρ} {𝑘} x with kind-eq? 𝑘 𝑘
+  ... | yes refl = refl
+  ... | no k≠k = contradiction refl k≠k
 
   ext-ren-sub : ∀ {ρ}{τ}{𝑘} → exts (ren ρ 𝑘) 𝑘 ⨟ exts τ 𝑘 of 𝑘 ≡ exts (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘
-  ext-ren-sub {ρ}{τ}{𝑘} = {!!}
-    -- extensionality (aux{ρ}{τ})
-    --   where
-    --   aux : ∀{ρ}{τ} → ∀ x → (exts (ren ρ) ⨟ exts τ) x ≡ exts (ren ρ ⨟ τ) x
-    --   aux {ρ} {τ} zero = refl
-    --   aux {ρ} {τ} (suc x) = refl
+  ext-ren-sub {ρ}{τ}{𝑘} = extensionality ♠
+    where
+    ♠ : ∀ x → (exts (ren ρ 𝑘) 𝑘 ⨟ (exts τ 𝑘) of 𝑘) x ≡ (exts (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘) x
+    ♠ zero = ext-sub-zero {τ}
+    ♠ (suc x) =
+      begin
+      (exts (ren ρ 𝑘) 𝑘 ⨟ exts τ 𝑘 of 𝑘) (suc x) ≡⟨ refl ⟩
+      sub (exts τ 𝑘) 𝑘 (` suc (ρ x) of 𝑘) ≡⟨ ext-sub-suc {τ} (ρ x) ⟩
+      rename suc 𝑘 (τ (ρ x)) ≡⟨ cong (λ □ → rename suc 𝑘 □) (sym (sub-ren-var {τ} {ρ} x)) ⟩
+      rename suc 𝑘 (sub τ 𝑘 ((ren ρ 𝑘) x)) ≡⟨ refl ⟩
+      (exts (ren ρ 𝑘 ⨟ τ of 𝑘) 𝑘) (suc x)
+      ∎
   {-# REWRITE ext-ren-sub #-}
 
   private
