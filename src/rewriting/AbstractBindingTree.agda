@@ -162,7 +162,24 @@ module Private where
   ren-sub {τ} {ρ} {` x} = refl
   ren-sub {τ} {ρ} {op ⦅ args ⦆} = cong ((λ X → op ⦅ X ⦆)) ren-sub-args
   ren-sub-arg {τ} {ρ} {.■} {ast M} = cong ast (ren-sub{τ}{ρ}{M})
-  ren-sub-arg {τ} {ρ} {.(ν _)} {bind arg} = cong bind (ren-sub-arg{exts τ}{extr ρ})
+  ren-sub-arg {τ} {ρ} {.(ν _)} {bind arg} =
+    -- long version of the proof
+    cong bind Goal
+    where
+      IH  : sub-arg (exts τ) (sub-arg (ren (extr ρ)) arg) ≡ sub-arg (ren (extr ρ) ⨟ exts τ) arg
+      IH = ren-sub-arg{exts τ}{extr ρ}{arg = arg}
+
+      Goal : sub-arg (exts τ) (sub-arg (exts (ren ρ)) arg) ≡ sub-arg (exts (ren ρ ⨟ τ)) arg
+      Goal =
+        begin
+        sub-arg (exts τ) (sub-arg (exts (ren ρ)) arg) ≡⟨ refl ⟩ -- ext-ren
+        sub-arg (exts τ) (sub-arg (ren (extr ρ)) arg) ≡⟨ IH ⟩
+        sub-arg (ren (extr ρ) ⨟ exts τ) arg           ≡⟨ refl ⟩ -- ext-ren
+        sub-arg (exts (ren ρ) ⨟ exts τ) arg           ≡⟨ refl ⟩ -- ext-ren-sub
+        sub-arg (exts (ren ρ ⨟ τ)) arg
+        ∎
+    --short version of the proof:
+    --cong bind (ren-sub-arg{exts τ}{extr ρ})
   ren-sub-args {τ} {ρ} {.[]} {nil} = refl
   ren-sub-args {τ} {ρ} {.(_ ∷ _)} {cons arg args} =
      cong₂ cons ren-sub-arg ren-sub-args
