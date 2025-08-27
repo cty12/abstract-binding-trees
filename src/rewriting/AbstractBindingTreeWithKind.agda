@@ -295,162 +295,162 @@ module Private where
   sub-args-id {𝑘} {.(_ ∷ _)} {cons arg args} = cong₂ cons sub-arg-id sub-args-id
   {-# REWRITE sub-id #-}
 
--- {----------------------------------------------------------------------------
---  Public
--- ----------------------------------------------------------------------------}
+{----------------------------------------------------------------------------
+ Public
+----------------------------------------------------------------------------}
 
--- abstract {- experimenting with making ren abstract -Jeremy -}
---   ren : Rename → ℕ → Subst
---   ren ρ 𝑘 = Private.ren ρ 𝑘
+abstract {- experimenting with making ren abstract -Jeremy -}
+  ren : Rename → ℕ → Subst
+  ren ρ 𝑘 = Private.ren ρ 𝑘
 
---   ren-def : ∀ ρ 𝑘 x → ren ρ 𝑘 x ≡ ` ρ x of 𝑘
---   ren-def ρ 𝑘 x = refl
+  ren-def : ∀ ρ 𝑘 x → ren ρ 𝑘 x ≡ ` ρ x of 𝑘
+  ren-def ρ 𝑘 x = refl
 
--- ↑ : ℕ → Subst
--- ↑ 𝑘 = ren suc 𝑘
+↑ : ℕ → Subst
+↑ 𝑘 = ren suc 𝑘
 
--- up-def : ↑ ≡ ren suc
--- up-def = refl
+up-def : ↑ ≡ ren suc
+up-def = refl
 
--- abstract
---   infixr 5 _⨟_of_
---   _⨟_of_ : Subst → Subst → ℕ → Subst
---   σ ⨟ τ of 𝑘 = Private._⨟_of_ σ τ 𝑘
+abstract
+  infixr 5 _⨟_of_
+  _⨟_of_ : Subst → Subst → ℕ → Subst
+  σ ⨟ τ of 𝑘 = Private._⨟_of_ σ τ 𝑘
 
---   id : ℕ → Subst
---   id 𝑘 = Private.id 𝑘
+  id : ℕ → Subst
+  id 𝑘 = Private.id 𝑘
 
--- ext : Subst → ℕ → Subst
--- ext σ 𝑘 = (` 0 of 𝑘) • (σ ⨟ ↑ 𝑘 of 𝑘)
+ext : Subst → ℕ → Subst
+ext σ 𝑘 = (` 0 of 𝑘) • (σ ⨟ ↑ 𝑘 of 𝑘)
 
--- abstract
---   -- Phil: you're using semicolon, so this should be postfix
---   ⟪_⟫ : Subst → ℕ → ABT → ABT
---   ⟪ σ ⟫ 𝑘 M = Private.sub σ 𝑘 M
+abstract
+  -- Phil: you're using semicolon, so this should be postfix
+  ⟪_⟫ : Subst → ℕ → ABT → ABT
+  ⟪ σ ⟫ 𝑘 M = Private.sub σ 𝑘 M
 
---   -- Phil: try switching + to *
---   ⟪_⟫₊ : Subst → ℕ → {bs : List Sig} → Args bs → Args bs
---   ⟪ σ ⟫₊ 𝑘 args = Private.sub-args σ 𝑘 args
+  -- Phil: try switching + to *
+  ⟪_⟫₊ : Subst → ℕ → {bs : List Sig} → Args bs → Args bs
+  ⟪ σ ⟫₊ 𝑘 args = Private.sub-args σ 𝑘 args
 
---   ⟪_⟫ₐ : Subst → ℕ → {b : Sig} → Arg b → Arg b
---   ⟪ σ ⟫ₐ 𝑘 arg = Private.sub-arg σ 𝑘 arg
+  ⟪_⟫ₐ : Subst → ℕ → {b : Sig} → Arg b → Arg b
+  ⟪ σ ⟫ₐ 𝑘 arg = Private.sub-arg σ 𝑘 arg
 
---   id-var : ∀{x 𝑘} → (id 𝑘 x) ≡ (` x of 𝑘)
---   id-var {x} {𝑘} = refl
---   {-# REWRITE id-var #-}
+  id-var : ∀{x 𝑘} → (id 𝑘 x) ≡ (` x of 𝑘)
+  id-var {x} {𝑘} = refl
+  {-# REWRITE id-var #-}
 
---   -- sub-var : ∀ σ 𝑘 x → ⟪ σ ⟫ 𝑘 (` x of 𝑘) ≡ σ x
---   -- sub-var σ 𝑘 x = refl
---   -- {- REWRITE sub-var -}
+  sub-var : ∀ σ 𝑘 x → ⟪ σ ⟫ 𝑘 (` x of 𝑘) ≡ σ x
+  sub-var σ 𝑘 x = refl
+  {-# REWRITE sub-var #-}
 
--- --   sub-op : ∀{σ : Subst}{op : Op}{args : Args (sig op)}
--- --      → ⟪ σ ⟫ (op ⦅ args ⦆) ≡ op ⦅ ⟪ σ ⟫₊ args ⦆
--- --   sub-op {σ}{op}{args} = refl
--- --   {-# REWRITE sub-op #-}
+--   sub-op : ∀{σ : Subst}{op : Op}{args : Args (sig op)}
+--      → ⟪ σ ⟫ (op ⦅ args ⦆) ≡ op ⦅ ⟪ σ ⟫₊ args ⦆
+--   sub-op {σ}{op}{args} = refl
+--   {-# REWRITE sub-op #-}
 
--- --   sub-arg-ast : ∀{σ M} → ⟪ σ ⟫ₐ (ast M) ≡ ast (⟪ σ ⟫ M)
--- --   sub-arg-ast {σ}{M} = refl
--- --   {-# REWRITE sub-arg-ast #-}
+--   sub-arg-ast : ∀{σ M} → ⟪ σ ⟫ₐ (ast M) ≡ ast (⟪ σ ⟫ M)
+--   sub-arg-ast {σ}{M} = refl
+--   {-# REWRITE sub-arg-ast #-}
 
--- --   sub-arg-bind : ∀{σ b}{arg : Arg b}
--- --      → ⟪ σ ⟫ₐ (bind arg) ≡ bind (⟪ ext σ ⟫ₐ arg)
--- --   sub-arg-bind {σ}{b}{arg} = refl
--- --   {-# REWRITE sub-arg-bind #-}
+--   sub-arg-bind : ∀{σ b}{arg : Arg b}
+--      → ⟪ σ ⟫ₐ (bind arg) ≡ bind (⟪ ext σ ⟫ₐ arg)
+--   sub-arg-bind {σ}{b}{arg} = refl
+--   {-# REWRITE sub-arg-bind #-}
 
--- --   sub-args-nil : ∀{σ} → ⟪ σ ⟫₊ nil ≡ nil
--- --   sub-args-nil {σ} = refl
--- --   {-# REWRITE sub-args-nil #-}
+--   sub-args-nil : ∀{σ} → ⟪ σ ⟫₊ nil ≡ nil
+--   sub-args-nil {σ} = refl
+--   {-# REWRITE sub-args-nil #-}
 
--- --   sub-args-cons : ∀{σ}{b}{bs}{arg : Arg b}{args : Args bs}
--- --      → ⟪ σ ⟫₊ (cons arg args) ≡ cons (⟪ σ ⟫ₐ arg) (⟪ σ ⟫₊ args)
--- --   sub-args-cons {σ}{arg}{args} = refl
--- --   {-# REWRITE sub-args-cons #-}
+--   sub-args-cons : ∀{σ}{b}{bs}{arg : Arg b}{args : Args bs}
+--      → ⟪ σ ⟫₊ (cons arg args) ≡ cons (⟪ σ ⟫ₐ arg) (⟪ σ ⟫₊ args)
+--   sub-args-cons {σ}{arg}{args} = refl
+--   {-# REWRITE sub-args-cons #-}
 
--- --   sub-head : ∀ σ M → ⟪ M • σ ⟫ (` 0) ≡ M
--- --   sub-head σ M = refl
--- --   {-# REWRITE sub-head #-}
+--   sub-head : ∀ σ M → ⟪ M • σ ⟫ (` 0) ≡ M
+--   sub-head σ M = refl
+--   {-# REWRITE sub-head #-}
 
--- --   sub-tail : ∀ σ M → ↑ ⨟ M • σ ≡ σ
--- --   sub-tail σ M = extensionality (aux{σ}{M})
--- --       where
--- --       aux : ∀{σ M} → ∀ x → (↑ ⨟ M • σ) x ≡ σ x
--- --       aux {σ} {M} zero = refl
--- --       aux {σ} {M} (suc x) = refl
--- --   {-# REWRITE sub-tail #-}
+--   sub-tail : ∀ σ M → ↑ ⨟ M • σ ≡ σ
+--   sub-tail σ M = extensionality (aux{σ}{M})
+--       where
+--       aux : ∀{σ M} → ∀ x → (↑ ⨟ M • σ) x ≡ σ x
+--       aux {σ} {M} zero = refl
+--       aux {σ} {M} (suc x) = refl
+--   {-# REWRITE sub-tail #-}
 
--- --   sub-id : ∀ M → ⟪ id ⟫ M ≡ M
--- --   sub-id M = Private.sub-id
--- --   {-# REWRITE sub-id #-}
+--   sub-id : ∀ M → ⟪ id ⟫ M ≡ M
+--   sub-id M = Private.sub-id
+--   {-# REWRITE sub-id #-}
 
--- --   sub-eta : ∀ σ → (⟪ σ ⟫ (` 0)) • (↑ ⨟ σ) ≡ σ
--- --   sub-eta σ = extensionality aux
--- --     where
--- --     aux : ∀ {σ} x → ((⟪ σ ⟫ (` 0)) • (↑ ⨟ σ)) x ≡ σ x
--- --     aux {σ} zero = refl
--- --     aux {σ} (suc x) = refl
--- --   {-# REWRITE sub-eta #-}
+--   sub-eta : ∀ σ → (⟪ σ ⟫ (` 0)) • (↑ ⨟ σ) ≡ σ
+--   sub-eta σ = extensionality aux
+--     where
+--     aux : ∀ {σ} x → ((⟪ σ ⟫ (` 0)) • (↑ ⨟ σ)) x ≡ σ x
+--     aux {σ} zero = refl
+--     aux {σ} (suc x) = refl
+--   {-# REWRITE sub-eta #-}
 
--- --   sub-id-right : ∀ (σ : Subst) → σ ⨟ id ≡ σ
--- --   sub-id-right σ = refl
--- --   {-# REWRITE sub-id-right #-}
+--   sub-id-right : ∀ (σ : Subst) → σ ⨟ id ≡ σ
+--   sub-id-right σ = refl
+--   {-# REWRITE sub-id-right #-}
 
--- --   sub-id-left : (σ : Subst) → id ⨟ σ ≡ σ
--- --   sub-id-left σ = refl
--- --   {-# REWRITE sub-id-left #-}
+--   sub-id-left : (σ : Subst) → id ⨟ σ ≡ σ
+--   sub-id-left σ = refl
+--   {-# REWRITE sub-id-left #-}
 
--- --   sub-assoc : ∀ σ τ θ → (σ ⨟ τ) ⨟ θ ≡ σ ⨟ τ ⨟ θ
--- --   sub-assoc σ τ θ = refl
--- --   {-# REWRITE sub-assoc #-}
+--   sub-assoc : ∀ σ τ θ → (σ ⨟ τ) ⨟ θ ≡ σ ⨟ τ ⨟ θ
+--   sub-assoc σ τ θ = refl
+--   {-# REWRITE sub-assoc #-}
 
--- --   cons-seq : ∀ σ τ M → (M • σ) ⨟ τ ≡ ⟪ τ ⟫ M • (σ ⨟ τ)
--- --   cons-seq σ τ M = refl
--- --   {-# REWRITE cons-seq #-}
+--   cons-seq : ∀ σ τ M → (M • σ) ⨟ τ ≡ ⟪ τ ⟫ M • (σ ⨟ τ)
+--   cons-seq σ τ M = refl
+--   {-# REWRITE cons-seq #-}
 
--- --   compose-sub : ∀ σ τ M → ⟪ τ ⟫ (⟪ σ ⟫ M) ≡ ⟪ σ ⨟ τ ⟫ M
--- --   compose-sub σ τ M = refl
--- --   {-# REWRITE compose-sub #-}
+--   compose-sub : ∀ σ τ M → ⟪ τ ⟫ (⟪ σ ⟫ M) ≡ ⟪ σ ⨟ τ ⟫ M
+--   compose-sub σ τ M = refl
+--   {-# REWRITE compose-sub #-}
 
--- --   cons-zero-up : ` 0 • ↑ ≡ id
--- --   cons-zero-up = refl
--- --   {-# REWRITE cons-zero-up #-}
+--   cons-zero-up : ` 0 • ↑ ≡ id
+--   cons-zero-up = refl
+--   {-# REWRITE cons-zero-up #-}
 
--- --   seq-def : ∀ σ τ x → (σ ⨟ τ) x ≡ ⟪ τ ⟫ (σ x)
--- --   seq-def σ τ x = refl
+--   seq-def : ∀ σ τ x → (σ ⨟ τ) x ≡ ⟪ τ ⟫ (σ x)
+--   seq-def σ τ x = refl
 
--- --   up-var : ∀ x → ↑ x ≡ ` suc x
--- --   up-var x = refl
+--   up-var : ∀ x → ↑ x ≡ ` suc x
+--   up-var x = refl
 
--- --   ext-ren-extr : ∀ ρ → (` 0) • (ren ρ ⨟ ↑) ≡ ren (extr ρ)
--- --   ext-ren-extr ρ = refl
--- --   -- {-# REWRITE ext-ren-extr #-}
+--   ext-ren-extr : ∀ ρ → (` 0) • (ren ρ ⨟ ↑) ≡ ren (extr ρ)
+--   ext-ren-extr ρ = refl
+--   -- {-# REWRITE ext-ren-extr #-}
 
--- --   ren-extr-def : ∀ ρ → ren (extr ρ) ≡ ` 0 • (ren ρ ⨟ ↑)
--- --   ren-extr-def ρ = refl
--- --   {-# REWRITE ren-extr-def #-}
+--   ren-extr-def : ∀ ρ → ren (extr ρ) ≡ ` 0 • (ren ρ ⨟ ↑)
+--   ren-extr-def ρ = refl
+--   {-# REWRITE ren-extr-def #-}
 
--- --   ren-extr-zero : ∀ ρ → ren (extr ρ) 0 ≡ ` 0
--- --   ren-extr-zero ρ = refl
--- --   {- REWRITE ren-extr-zero -}
+--   ren-extr-zero : ∀ ρ → ren (extr ρ) 0 ≡ ` 0
+--   ren-extr-zero ρ = refl
+--   {- REWRITE ren-extr-zero -}
 
--- --   ren-extr-suc : ∀ ρ x → ren (extr ρ) (suc x) ≡ ` suc (ρ x)
--- --   ren-extr-suc ρ x = refl
--- --   {- REWRITE ren-extr-suc -}
+--   ren-extr-suc : ∀ ρ x → ren (extr ρ) (suc x) ≡ ` suc (ρ x)
+--   ren-extr-suc ρ x = refl
+--   {- REWRITE ren-extr-suc -}
 
--- --   seq-up-ren-suc : ∀ σ x → (σ ⨟ ↑) x ≡ Private.sub (Private.ren suc) (σ x)
--- --   seq-up-ren-suc σ x = refl
+--   seq-up-ren-suc : ∀ σ x → (σ ⨟ ↑) x ≡ Private.sub (Private.ren suc) (σ x)
+--   seq-up-ren-suc σ x = refl
 
--- --   ren-seq-up : ∀ ρ x → (ren ρ ⨟ ↑) x ≡ ` suc (ρ x)
--- --   ren-seq-up ρ x = refl
--- --   {- REWRITE ren-seq-up -}
+--   ren-seq-up : ∀ ρ x → (ren ρ ⨟ ↑) x ≡ ` suc (ρ x)
+--   ren-seq-up ρ x = refl
+--   {- REWRITE ren-seq-up -}
 
--- -- _[_] : ABT → ABT → ABT
--- -- N [ M ] =  ⟪ M • id ⟫ N
+-- _[_] : ABT → ABT → ABT
+-- N [ M ] =  ⟪ M • id ⟫ N
 
--- -- _〔_〕 : ABT → ABT → ABT
--- -- _〔_〕 N M = ⟪ ext (M • id) ⟫ N
+-- _〔_〕 : ABT → ABT → ABT
+-- _〔_〕 N M = ⟪ ext (M • id) ⟫ N
 
--- -- substitution : ∀{M N L} → M [ N ] [ L ] ≡ M 〔 L 〕 [ N [ L ] ]
--- -- substitution {M}{N}{L} = refl
+-- substitution : ∀{M N L} → M [ N ] [ L ] ≡ M 〔 L 〕 [ N [ L ] ]
+-- substitution {M}{N}{L} = refl
 
--- -- exts-sub-cons : ∀ {σ N V} → (⟪ ext σ ⟫ N) [ V ] ≡ ⟪ V • σ ⟫ N
--- -- exts-sub-cons {σ}{N}{V} = refl
+-- exts-sub-cons : ∀ {σ N V} → (⟪ ext σ ⟫ N) [ V ] ≡ ⟪ V • σ ⟫ N
+-- exts-sub-cons {σ}{N}{V} = refl
